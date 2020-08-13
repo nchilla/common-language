@@ -15,9 +15,12 @@ html{
 }
 body{
     background-color:var(--background);
+    position:relative;
+    width:100vw;
   --outdent:2;
   --leftedge:2;
   --rightedge:14;
+
 }
 body.squish{
   --outdent:2;
@@ -81,7 +84,7 @@ h4{
 }
 .newstext{
   grid-column:var(--leftedge) / var(--rightedge);
-  margin-bottom:10px;
+  margin-bottom:15px;
 }
 
 #cover{
@@ -131,6 +134,70 @@ h4{
   /* height:200vh; */
 }
 
+#nav-dropdown{
+  grid-row:1;
+  height:81px;
+  grid-column:var(--leftedge) / var(--rightedge);
+  overflow-x: hidden;
+  overflow-y: hidden;
+  transition:height 0.3s;
+}
+#dropper{
+  position:absolute;
+  height:80px;
+  /* width:65px; */
+  top:2px;
+  right:3px;
+  transform-origin:100% 100%;
+  transform:rotate(33deg);
+  cursor:pointer;
+}
+#dropper h2{
+  position:absolute;
+  bottom:-8px;
+  right:15px;
+}
+#dropper svg{
+  position:absolute;
+  right:0px;
+  bottom:0px;
+}
+
+.dot{
+  fill:black;
+  height:7px;
+  width:7px;
+}
+
+#sectionlinks{
+  position:absolute;
+  top:95px;
+  right:0px;
+  width:100%;
+  display:flex;
+  align-items: flex-end;
+  flex-flow:column nowrap;
+}
+.h-sectlink{
+  height:35px;
+  width:100px;
+  cursor:pointer;
+}
+.h-sectlink .dot{
+  position:absolute;
+  right:0;
+  top:12px;
+}
+.h-sectlink h2{
+  position:absolute;
+  right:15px;
+  transition:right 0.3s;
+}
+
+
+
+/* 9px dots */
+
 #horizontal-nav{
   grid-row-start:1;
   grid-column:var(--leftedge) / var(--rightedge);
@@ -166,9 +233,13 @@ h4{
 #sunbox-v .sunsvg{
   top:-56px;
   transform:rotate(20deg);
+  transition:transform 1s;
 }
 #sunbox-v .sunsvg .dotgroup{
   opacity:1;
+}
+.viewing .sun{
+  fill:var(--highlight);
 }
 
 
@@ -262,6 +333,9 @@ h4{
   #horizontal-nav{
     display:none;
   }
+  #nav-dropdown{
+    display:none;
+  }
   #navwrap{
     position:absolute;
     top:50px;
@@ -319,7 +393,7 @@ h4{
   }
 }
 
-@media (min-aspect-ratio: 11/8){
+@media (min-aspect-ratio: 11/8) and (min-width:700px){
   .img-vert-fit{
     width:auto;
     height:100%;
@@ -358,7 +432,7 @@ h4{
   }
 }
 
-@media (max-width:600px){
+@media(max-width:700px){
   :root{
     --subhead-size:1.4rem;
     --subhead-lh:1.9rem;
@@ -366,6 +440,12 @@ h4{
   p{
     font-size:1.3rem;
     line-height: 1.8rem;
+  }
+}
+
+@media (max-width:600px){
+  #sunbox-h .sunsvg{
+    left:-40px;
   }
   .separator{
     height:20px;
@@ -396,6 +476,9 @@ h4{
 }
 /* hover effects------------------ */
 @media(hover:hover){
+  .h-sectlink:hover h2{
+    right:30px;
+  }
 
   #navwrap div:hover{
     cursor:pointer;

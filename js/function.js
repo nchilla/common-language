@@ -1,6 +1,6 @@
 //content variables
 var page='home';
-var imgRatio=5/3
+var imgRatio=5/3;
 
 
 
@@ -8,12 +8,15 @@ var imgRatio=5/3
 var root=document.documentElement;
 var windowsize={hor:0,vert:0};
 var navWrapDist=document.querySelector('.section-link:last-child').getBoundingClientRect().left;
+var viewing=d3.select('.viewing');
+var dropdown=false;
 
 
 function startUp(){
   coverSection();
   setTimeout(setSizing,50);
   setTimeout(resetSectionHeight,500);
+  navSetUp();
 }
 
 function coverSection(){
@@ -24,14 +27,78 @@ function coverSection(){
   }
 }
 
+function isHover(){
+  if(window.matchMedia('(hover:hover)').matches){
+    return true;
+  }else{
+    return false;
+  }
+}
+
 function checkForCover(){
-  var matches=window.matchMedia('(min-aspect-ratio: 11/8)').matches;
+  var matches=window.matchMedia('(min-aspect-ratio: 11/8) and (min-width:700px)').matches;
   if(matches){
     return true;
   }else{
     return false;
   }
 }
+
+//interactive data and event handling
+
+function navSetUp(){
+  var items=d3.selectAll('.nav-item')
+  console.log(items);
+  if(isHover()){
+    items.on('mouseover',function(){
+      viewing.classed('viewing',false);
+    })
+    items.on('mouseleave',function(){
+      viewing.classed('viewing',true);
+    })
+  }
+  items.on('click',function(event){
+    viewing.classed('viewing',false);
+    viewing=d3.select(d3.event.currentTarget);
+    viewing.classed('viewing',true);
+  })
+
+  window.addEventListener('mousemove',function(event){
+    yCoord=event.clientY;
+    xCoord=event.clientX;
+    var angle=Math.atan(yCoord/xCoord);
+    if(angle>Math.PI/4.5){
+      angle=Math.PI/4.5;
+    }
+    d3.select('#sunbox-v').select('.sunsvg').style('transform',`rotate(${angle}rad)`)
+  })
+
+  d3.select('#dropper').on('click',function(){
+    if(dropdown==false){
+      d3.select('#dropper').select('h2').text('close')
+      d3.select('#nav-dropdown').style('height','250px');
+      dropdown=true;
+    }else{
+      d3.select('#dropper').select('h2').text('menu')
+      d3.select('#nav-dropdown').style('height','81px');
+      dropdown=false;
+    }
+
+  })
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 //all sizing adjustments compiled for startup and resize
