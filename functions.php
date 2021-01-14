@@ -73,8 +73,12 @@ function create_post_news() {
       register_taxonomy_for_object_type( 'post_tag', 'news' );
 }
 
+function new_size(){
+  add_image_size( 'custom-medium', 1500, 1500);
+}
 
 
+add_action( 'init', 'new_size' );
 add_theme_support( 'post-thumbnails' );
 add_action( 'init', 'create_post_project' );
 add_action( 'init', 'create_post_concept' );
