@@ -3,7 +3,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html;" charset="utf-8" >
     <meta name="viewport" charset="UTF-8" content="width=device-width, initial-scale=1">
-    <title>Common Language</title>
+    <title>Common Language Studios</title>
     <!-- styling -->
     <link rel="stylesheet" href="<?php echo get_bloginfo('template_directory'); ?>/css/clearstyle.css" type="text/css">
     <link rel="stylesheet" href="<?php echo get_bloginfo('template_directory'); ?>/css/style.css" type="text/css">
@@ -46,10 +46,20 @@
         array_push($project_slides, $item);
       };
       $project_slides_json=json_encode($project_slides);
+
+      // include_once(get_template_directory()."/arena/arena.php");
+      // $arena2 = new Arena();
+      // $page = $arena2->set_page(); // this checks if page is set, if not sets page to 1
+      // $per = 8; // how many items per page
+      // $slug = 'concepts-bo-6ajlvpqg'; // channel slug (e.g. http://are.na/arena-influences)
+      // $channel = $arena2->get_channel($slug, array('page' => $page, 'per' => $per));
+      $channel=get_channel('concepts-bo-6ajlvpqg');
+      $channel_json=json_encode($channel);
      ?>
   </head>
   <script type="text/javascript">
     var projects=<?php echo $project_slides_json ?>;
+    console.log(<?php echo $channel_json; ?>);
   </script>
   <body class='nosquish'>
     <div id='scrollcontent'>
@@ -89,33 +99,17 @@
       </div>
       <div id='sizereference'></div>
       <div id='cover'>
-        <div id="project-list">
-
-        </div>
+        <div id="project-list"></div>
+        <div id="homemarker" class='section-start' data-section="home"></div>
 
         <?php
         foreach ($project_slides as $i=>$proj) {
           get_template_part('generate-gallery',null,array('item'=>$proj,'ind'=>$i));
         }
-
          ?>
       </div>
-      <h1 class='bodycontent'>Common Language</h1>
-      <h2 class='bodycontent'>
-        We explore the intersection between Architecture and Music. Both involve the creative use and misuse of rhythm, texture, harmony, pattern, proportion, and dynamics. <br><br>Our fundamental goal is to investigate this relationship through a collaborative making process that constantly re-defines the role of architecture.
-      </h2>
-      <div class="separator bodycontent">
-          <svg preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 100 102"><path vector-effect='non-scaling-stroke' d="M0,100,20,0,70,100l30-70.07"/></svg>
-      </div>
-      <h2 class='sectionmarker bodycontent'>News</h2>
-      <h4 class='datemarker bodycontent'>November 15, 2020</h4>
-      <p class='newstext bodycontent'>Justin Sherrill was featured on the Parsons School of Constructed Environments blog</p>
-      <h4 class='datemarker bodycontent'>October 10, 2020</h4>
-      <p class='newstext bodycontent'>Our mixed-use residential complex design won second place in New Den-cities competition</p>
-
-      <div class="separator bodycontent">
-        <svg preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 100 102"><path vector-effect='non-scaling-stroke' d="M0,48,30,100,80,0l20,100"/></svg>
-      </div>
+      <h1 id="profile-start" class='bodycontent section-start' data-section="profile">Common Language</h1>
+      <?php get_template_part('custom-home-template',null,array('channel'=>$channel)); ?>
     </div>
     <div id='fixedcontent' class="page-grid">
       <div id="horizontal-nav">
@@ -165,6 +159,8 @@
         </filter>
       </defs>
     </svg>
+    <script src="https://unpkg.com/intersection-observer"></script>
+    <script src="https://unpkg.com/scrollama"></script>
     <script src="<?php echo get_bloginfo('template_directory'); ?>/js/smoothscroll.min.js"></script>
     <script src="<?php echo get_bloginfo('template_directory'); ?>/js/d3.min.js"></script>
     <script src="<?php echo get_bloginfo('template_directory'); ?>/js/function.js"></script>

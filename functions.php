@@ -78,10 +78,85 @@ function new_size(){
 }
 
 
+// hook into rest_api_init and register a new api route
+
+add_action( 'rest_api_init', function () {
+  register_rest_route(
+      'common-language/v2',   // namespace
+      '/homepage',  // route
+      array(                  // options
+          'methods'  => 'GET',
+          'callback' => 'build_home',
+          'permission_callback' => '__return_true',
+          // 'args'     => array(
+          //     'context' => array(
+          //     'default' => 'view',
+          //     ),
+          // )
+      )
+  );
+});
+
+  $arena;
+  function start_up(){
+    include_once(get_template_directory()."/arena/arena.php");
+    $GLOBALS['arena'] = new Arena();
+  }
+
+
+
+  function get_channel($slug){
+    $page = $GLOBALS['arena']->set_page(); // this checks if page is set, if not sets page to 1
+    $per = 10; // how many items per page
+    $newchannel=$GLOBALS['arena']->get_channel($slug, array('page' => $page, 'per' => $per));
+    foreach ($newchannel->contents as $item) {
+      if($item->class=="Channel"){
+        // $item->contents=$item->slug;
+        $item->contents=get_channel($item->slug)->contents;
+      }
+    }
+    return $newchannel;
+    // return $GLOBALS['arena']->get_channel($slug, array('page' => $page, 'per' => $per));
+  }
+
+
+
+ function build_home() {
+   // include_once(get_template_directory()."/arena/arena.php");
+   // $arena = new Arena();
+   // $page = $arena->set_page(); // this checks if page is set, if not sets page to 1
+   // $per = 8; // how many items per page
+   // $slug = 'concepts-bo-6ajlvpqg'; // channel slug (e.g. http://are.na/arena-influences)
+   // $channel = $arena->get_channel($slug, array('page' => $page, 'per' => $per));
+   $channel=get_channel('concepts-bo-6ajlvpqg');
+    ob_start();
+    get_template_part('custom-home-template',null,array('channel'=>$channel));
+    $data = ob_get_clean();
+    return new WP_REST_Response( array(
+        'html' => $data,
+    ) );
+}
+
+
+$channel="test";
+
+// function initialize_arena(){
+//   include_once(get_template_directory()."/arena/arena.php");
+//   $arena = new Arena();
+//   $page = $arena->set_page(); // this checks if page is set, if not sets page to 1
+//   $per = 8; // how many items per page
+//   $slug = 'concepts-bo-6ajlvpqg'; // channel slug (e.g. http://are.na/arena-influences)
+//   $GLOBALS['channel'] = $arena->get_channel($slug, array('page' => $page, 'per' => $per));
+// }
+
+
+
+
 add_action( 'init', 'new_size' );
 add_theme_support( 'post-thumbnails' );
 add_action( 'init', 'create_post_project' );
 add_action( 'init', 'create_post_concept' );
 add_action( 'init', 'create_post_news' );
-
+add_action( 'init', 'start_up' );
+// add_action( 'init', 'initialize_arena' );
 ini_set('display_errors',1); error_reporting(E_ALL);

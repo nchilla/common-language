@@ -1,12 +1,22 @@
+
 //content variables
 var page='home';
 var imgRatio=5/3;
+let homecontent={
+  title:"Common Language",
+  abstract:false,
+  fetch:false
+}
+
 
 
 // DOM variables
+const scroller = scrollama();
 let carouselCounter=1;
 let navPos;
 let projectView=false;
+
+let pause={status:false,target:null};
 
 
 //DOM related variables
@@ -16,13 +26,9 @@ var navWrapDist=document.querySelector('.section-link:last-child').getBoundingCl
 var viewing=d3.select('.viewing');
 var dropdown=false;
 
-
+//gets everything started!
 function startUp(){
-  document.querySelectorAll('.gallery').forEach((item, i) => {
-    console.log(item.id);
-  });
-
-  coverSection();
+  whichPage();
   setTimeout(setSizing,50);
   setTimeout(resetSectionHeight,500);
   navSetUp();
@@ -30,9 +36,56 @@ function startUp(){
 }
 
 
-function projectGalleryGenerator(){
-  console.log(projects);
+//on startup, sets variables and orients DOM based on what page you loaded in.
+//will need editing once page is accessible through post template
+function whichPage(){
 
+  if(page=='home'){
+    d3.select('#visible-gallery').classed('selected',false);
+    d3.select('#cover').classed('project',false);
+    projectView=false;
+    homeSetUp();
+  }else{
+    d3.select('#visible-gallery').classed('selected',true);
+    d3.select('#cover').classed('project',true);
+    projectView=true;
+  }
+
+}
+
+function homeSetUp(){
+  d3.selectAll('#scrollcontent>h2').classed('bodycontent',true);
+  d3.selectAll('.more-info').on('click',function(){expandItem(event);});
+  document.querySelectorAll('.concept-wrapper').forEach((item, i) => {
+    let rotation=5+Math.random()*15;
+    rotation=rotation*(Math.random()>0.5?1:-1);
+    item.style.setProperty('--rotate-amount', rotation+'deg');
+    console.log(JSON.parse(item.dataset.item));
+  });
+
+  observing();
+}
+
+// animate display of hidden accordion itm
+function expandItem(event){
+  let trigger=event.currentTarget;
+  let parent=d3.select(trigger.parentNode);
+  let targetId='.'+trigger.dataset.contentid;
+  if(parent.classed('opened')){
+    d3.selectAll(targetId).classed('expanded',false);
+    parent.classed('opened',false);
+  }else{
+    d3.selectAll(targetId).classed('expanded',true);
+    parent.classed('opened',true);
+  }
+}
+
+
+
+
+
+//builds all the project galleries and also the project list
+function projectGalleryGenerator(){
   let pList=d3.select('#project-list');
   projects.forEach((item, i) => {
     var projSelect=d3.select('.proj'+item.id);
@@ -73,17 +126,20 @@ function projectGalleryGenerator(){
     }
   }, 6000);
 
-  d3.selectAll('.gallery').on('click',function(){
+  galleries=d3.selectAll('.gallery')
+  galleries.on('click',function(){
     var currentTarg=d3.select(event.currentTarget)
     if(d3.select('#cover').attr('class')=='list'){
       handleListClose();
     }else{
+      galleries.classed('temporary-animation',false);
       projectTransition(currentTarg);
       changeToProject(currentTarg.datum());
     }
   });
 }
 
+//closes the project list view
 function handleListClose(){
   switch(page){
     case 'home':
@@ -93,12 +149,14 @@ function handleListClose(){
     d3.select('#cover').attr('class','project');
     break;
   }
-  viewing.classed('viewing',false);
-  viewing=d3.select('#sunbox-v');
-  viewing.classed('viewing',true);
+  if(viewing.node().dataset.which=='home'){
+    viewing.classed('viewing',false);
+    viewing=d3.select('#sunbox-v');
+    viewing.classed('viewing',true);
+  }
 }
 
-
+//transitions cover section for a particular project gallery
 function projectTransition(currentTarg){
   currentTarg.selectAll('img').each(function(d,i){
     this.src=currentTarg.datum().images[i].large;
@@ -109,65 +167,77 @@ function projectTransition(currentTarg){
   page='project';
 }
 
-function changeToProject(project){
+//decides whether data needs fetching and rebuilds body for project
+function changeToProject(project,destination){
   d3.selectAll('.bodycontent').style('opacity',0);
   if(project.fetch!==false){
-    changeBodyContent(project.fetch,project);
+    changeBodyContent(project,destination);
   }else{
-    postRequest(project.id,project);
+    postRequest(project,destination);
   }
-
 }
 
-function changeBodyContent(content,project){
+
+
+
+
+//rebuilds body with content from a given project
+function changeBodyContent(project,destination){
   setTimeout(function () {
     d3.select('h1').text(project.title);
     d3.selectAll('.bodycontent:not(h1)').remove();
-    d3.select('#scrollcontent').append('h2').attr('class','bodycontent').html(`${project.abstract} • ${project.location}`);
-    document.querySelector('#scrollcontent').insertAdjacentHTML('beforeend', content);
+    if(project.abstract!==false){
+      scroller.destroy();
+      viewing.classed('viewing',false);
+      viewing=d3.select('#sunbox-v');
+      viewing.classed('viewing',true);
+      d3.select('#scrollcontent').append('h2').attr('class','bodycontent').html(`${project.abstract} • ${project.location}`);
+    }
+    document.querySelector('#scrollcontent').insertAdjacentHTML('beforeend', project.fetch);
+    d3.select('#scrollcontent').selectAll('p:not(.newstext)').attr('class','bodycontent');
+    if(project.abstract==false){homeSetUp();};
   }, 150);
-    d3.select('#scrollcontent').selectAll('p').attr('class','bodycontent');
+
     setTimeout(function () {
     d3.selectAll('.bodycontent').style('opacity',1);
+    if(destination!==undefined){
+      leScroll(destination);
+    }
   }, 300);
+
 }
 
-function postRequest(id,project){
+//fetches content for a given project, puts it in JSON entry, and triggers function to rebuild body
+function postRequest(project,destination){
   function reqListener () {
     var jsonResponse=JSON.parse(this.responseText);
-    projects.filter(item=>item.id==id)[0].fetch=jsonResponse.content.rendered;
-    console.log(projects.filter(item=>item.id==id)[0]);
-    changeBodyContent(jsonResponse.content.rendered,project);
+    if(project.abstract==false){
+      homecontent.fetch=jsonResponse.html;
+    }else{
+      // var jsonResponse=JSON.parse(this.responseText);
+      projects.filter(item=>item.id==project.id)[0].fetch=jsonResponse.content.rendered;
+    }
+    // console.log(projects.filter(item=>item.id==project.id)[0]);
+    changeBodyContent(project,destination);
   }
   var oReq = new XMLHttpRequest();
   oReq.addEventListener("load", reqListener);
-  oReq.open("GET", "/wp-json/wp/v2/project/"+id);
+  let fetchurl;
+  if(project.abstract==false){
+    fetchurl="/wp-json/common-language/v2/homepage";
+  }else{
+    fetchurl="/wp-json/wp/v2/project/"+project.id;
+  }
+  oReq.open("GET", fetchurl);
   oReq.send();
 }
 
 
 
-function coverSection(){
-
-  if(page=='home'){
-    d3.select('#visible-gallery').classed('selected',false);
-    d3.select('#cover').classed('project',false);
-    projectView=false;
-  }else{
-    d3.select('#visible-gallery').classed('selected',true);
-    d3.select('#cover').classed('project',true);
-    projectView=true;
-  }
-
-}
 
 
-// document.querySelector('.gallery').addEventListener('click',function(){
-//   d3.select('.gallery').classed('selected',true);
-//   d3.select('#cover').classed('project',true);
-//   projectView=true;
-// })
 
+//checks if site is on a device with hover capability
 function isHover(){
   if(window.matchMedia('(hover:hover)').matches){
     return true;
@@ -176,6 +246,7 @@ function isHover(){
   }
 }
 
+//checks if the page is at a certain sizing ratio that requires special sizing controls
 function checkForCover(){
   var matches=window.matchMedia('(min-aspect-ratio: 11/8) and (min-width:700px)').matches;
   if(matches){
@@ -185,8 +256,9 @@ function checkForCover(){
   }
 }
 
-//interactive data and event handling
 
+
+//sets up nav
 function navSetUp(){
   var items=d3.selectAll('.nav-item')
   if(isHover()){
@@ -231,17 +303,71 @@ function navSetUp(){
 
 }
 
-
+//transitions page when you click on a section
 function handleSectionChange(which){
   switch(which){
     case 'projects':
       d3.select('#cover').attr('class','list');
+      pause.status=true;
+      pause.target='home';
+      window.scrollTo({top: 0,left: 0,behavior: 'smooth'});
     break;
     case 'home':
+    if(d3.select('#cover').attr('class')=='list'){
       handleListClose();
+    }else{
+      goHome();
+    }
+    break;
+    case 'profile':
+      goHome('profile');
+    break;
+    case 'news':
+      goHome('news');
+    break;
+    case 'concepts':
+      goHome('concepts');
     break;
     default:
       console.log('nothing to see here');
+  }
+}
+
+//transition to home content
+function goHome(destination){
+  // document.querySelector('#visible-gallery').scrollTo({top: 0,left: 0,behavior: 'smooth'});
+  // projectTransition(currentTarg);
+  if(d3.select('#cover').attr('class')=='list'){
+    handleListClose();
+  }
+
+  let galleries=d3.selectAll('.gallery')
+  if(page!=='home'){
+    changeToProject(homecontent,destination);
+    galleries.classed('temporary-animation',true);
+    setTimeout(function () {
+      galleries.classed('temporary-animation',false);
+      projectView=false;
+    }, 300);
+  }else{
+    leScroll(destination);
+    projectView=false;
+  }
+
+  galleries.classed('selected',false);
+  d3.select('#cover').classed('project',false);
+  page='home';
+  // projectView=false;
+}
+
+function leScroll(destination){
+  if(destination!==undefined){
+    var scrollOpt={behavior:'smooth',block:'start'};
+    pause.status=true;
+    pause.target=destination;
+    document.querySelector('#'+destination+'-start').scrollIntoView(scrollOpt);
+  }else{
+    window.scrollTo({top: 0,left: 0,behavior: 'smooth'});
   }
 }
 
@@ -259,10 +385,12 @@ function setSizing(){
   }
 }
 
+//records right edge of vertical nav in variable for reference by other functions
 function checkNavEdge(){
   navPos=document.querySelector('#vertical-nav').getBoundingClientRect().right;
-  // root.style.setProperty('--nav-edge', navPos+'px');
 }
+
+//checks if mouse is hovering over vertical nav and brings it forward if necessary
 window.addEventListener('mousemove',checkMouseLoc);
 function checkMouseLoc(){
   if(event.clientX<navPos){
@@ -272,8 +400,7 @@ function checkMouseLoc(){
   }
 }
 
-
-//sizing adjustment for cover section
+//dynamic sizing adjustments for cover section and galleries
 function imgSizing(){
   //width for wrapper
   var percentage=document.querySelector('#sizereference').getBoundingClientRect().width / window.innerWidth*100;
@@ -293,12 +420,9 @@ function imgSizing(){
   }else{
     //fit to height
     gal.select('.preview-image').select('img').attr('class','img-vert-fit');
-    // d3.select('.gallery').selectAll('img').attr('class','img-vert-fit');
   }
   if(checkForCover()==false){
-    // d3.select('.gallery').selectAll('img').attr('class','img-vert-fit');
     var ratioHeight=window.getComputedStyle(document.querySelector('#visible-gallery').querySelectorAll('.aspect-ratio')[0]).paddingBottom;
-    // d3.select('.gallery').style('height',ratioHeight)
     root.style.setProperty('--ratio-height', ratioHeight);
   }else{
 
@@ -316,11 +440,12 @@ function resetSectionHeight(){
   });
 }
 
+//parses a computed style in px as an integer
 function parseComp(string){
   return parseInt(string.replace('px',''));
 }
 
-
+//determines arrangement of section links in nav bar
 function navWrapJust(){
   if(window.matchMedia('(min-width:700px)').matches){
     firstDist=document.querySelector('.section-link:first-child').getBoundingClientRect().left;
@@ -341,8 +466,36 @@ function navWrapJust(){
 
 }
 
+//detects position on page and changes section accordingly
+function observing(){
+  let offset=getComputedStyle(root).getPropertyValue('--scroll-offset');
+  // offset=window.innerHeight - offset;
+  // offset=offset+'px';
+
+  scroller.destroy();
+  scroller
+    .setup({
+      step: ".section-start",
+      offset:offset
+    })
+    .onStepEnter((response) => {
+      var el=d3.select(response.element);
+      let which=response.element.dataset.section;
+      if(pause.status==true){
+        if(which==pause.target){
+          pause.status=false;
+        }
+      }else{
+        viewing.classed('viewing',false);
+        viewing=d3.selectAll('.nav-item').filter((d, i,nodes)=>nodes[i].dataset.which==which)
+        viewing.classed('viewing',true);
+      }
+
+    })
+  window.addEventListener("resize", observing);
+}
 
 
-// window.addEventListener('DOMContentLoaded',beforeImages);
+
 window.addEventListener('resize',setSizing);
 window.addEventListener('DOMContentLoaded',startUp);
